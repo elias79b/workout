@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workout/data/hive_database.dart';
+import 'package:workout/datetime/date_time.dart';
 import 'package:workout/models/exercise.dart';
 import 'package:workout/models/workout.dart';
 
@@ -22,6 +23,8 @@ class WorkoutData extends ChangeNotifier {
     } else{
       db.saveToDatabase(WorkoutList);
     }
+    loadHeatMap();
+
   }
 
   ///get the list of workout
@@ -66,6 +69,7 @@ class WorkoutData extends ChangeNotifier {
 
     notifyListeners();
     db.saveToDatabase(WorkoutList);
+    loadHeatMap();
   }
 
   ///
@@ -84,5 +88,29 @@ class WorkoutData extends ChangeNotifier {
         .firstWhere((exercise) => exercise.name == exerciseName);
 
     return relrvantExercise;
+  }
+  String getStartDate(){
+  return  db.getStartDate();
+  }
+
+  Map<DateTime ,int> heatMapDataset = {};
+  void loadHeatMap(){
+    DateTime startDate = createDateTimeObject(getStartDate());
+    int daysInBetween = DateTime.now().difference(startDate).inDays;
+    for(int i = 0 ; i< daysInBetween +1 ; i++){
+      String yyyymmdd = convertDateTimeToYYYYMMDD(startDate.add(Duration(days: i)));
+      int completionStatus = db.getCompletionStatus(yyyymmdd);
+
+      int yaer = startDate.add(Duration(days: i)).year;
+      int month = startDate.add(Duration(days: i)).month;
+      int day = startDate.add(Duration(days: i)).day;
+
+      final percentForEachDay = <DateTime,int>{
+        DateTime(yaer,month,day) : completionStatus
+      };
+
+      heatMapDataset.addEntries(percentForEachDay.entries);
+
+    }
   }
 }
